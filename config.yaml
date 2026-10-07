@@ -1,0 +1,65 @@
+# Email Scanner settings. Secrets (API keys, tokens, sheet ID) are NOT here;
+# they come from environment variables / GitHub secrets. See SETUP.md.
+
+timezone: America/Chicago
+
+# Local hours (24h) when a digest goes out. If you change these, also update
+# the cron line in .github/workflows/digest.yml (see the comment there).
+digest_hours: [9, 14, 20]
+
+# Skip the digest email when there's nothing worth reading (still labels mail).
+send_empty_digest: false
+
+# Claude model used to rate emails. Small and cheap is plenty here.
+model: claude-haiku-4-5
+
+# Safety caps per run
+max_emails_per_run: 150
+body_chars: 1500
+
+# Gmail labels the scanner applies
+labels:
+  priority: "!Priority"
+  worth_a_look: "Digest/Worth a look"
+  low: "Digest/Low"
+  junk: "Digest/Probably junk"
+  seen: "Digest/Seen"
+
+star_priority: true
+
+# Move rated mail out of the inbox? Nothing is ever deleted by these.
+archive_low: false
+archive_junk: false
+
+# Auto-clean: move obvious junk to Trash on its own (label "Auto-cleaned").
+# An email is only auto-deleted when ALL of these agree:
+#   - no keep rule applies (people, replies, receipts, jobs, codes < 2 weeks, attachments...)
+#   - the model trained on your past decisions is 90%+ sure
+#   - at least 2 separate junk signals (Promotions tab, promo subject, never opened, list header)
+#   - Claude read the body and is at least auto_clean_min_certainty % sure it's junk
+# Everything else is left alone / goes to Review. Recovered mail teaches it (see README).
+# Leave this false until you've looked over the "Sweep Preview" tab.
+auto_clean: false
+auto_clean_min_certainty: 90
+
+# Quiet senders: if a sender (or anyone at that company's domain) hasn't emailed you in
+# this many years, the sweep deletes their mail on its own. Still kept: receipts/orders,
+# tax/legal docs, starred mail, threads you replied in, people you've emailed, and
+# personal Gmail/Yahoo-type senders. Anything with an attachment goes to Review.
+# Set to 0 to turn off.
+dormant_years: 3
+
+# Never auto-delete anything from these senders or domains (your own Delete choices in the
+# sheet still apply). Subdomains count, so myschool.edu covers alumni.myschool.edu too.
+never_auto_delete: []
+#  - myschool.edu
+
+# Max emails the sweep will body-check with Claude (roughly $1 per 1,000 on Haiku).
+sweep_max_body_checks: 4000
+
+# Context for Claude when judging what matters to you. Edit freely.
+about_me: |
+  Recent grad looking for work. Anything about a job application, recruiter, interview,
+  assessment, or offer matters most.
+  Also important: real people writing to me personally, bills and payment problems,
+  account security alerts, deliveries needing action, appointments.

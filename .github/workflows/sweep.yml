@@ -1,0 +1,48 @@
+name: Sweep
+
+# Proposes Delete / Review / Keep for every remaining email and writes the results to
+# the "Sweep Preview" and "Sweep Summary" tabs. With "clean" checked, it also moves the
+# obvious junk to Trash (label: Auto-cleaned). Otherwise it changes nothing in Gmail.
+on:
+  workflow_dispatch:
+    inputs:
+      clean:
+        description: "Actually move obvious junk to Trash (leave unchecked for a preview)"
+        type: boolean
+        default: false
+      limit:
+        description: "Only look at the newest N emails (blank = all)"
+        required: false
+        default: ""
+      max_checks:
+        description: "Max emails Claude reads (cost cap, blank = config default)"
+        required: false
+        default: ""
+
+concurrency:
+  group: email-scanner
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Sweep every remaining email
+        run: >
+          python -m emailscanner sweep
+          ${{ inputs.clean && '--clean' || '' }}
+          ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
+          ${{ inputs.max_checks && format('--max-checks {0}', inputs.max_checks) || '' }}
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SHEET_ID: ${{ secrets.SHEET_ID }}

@@ -1,0 +1,41 @@
+name: Digest
+
+on:
+  schedule:
+    # GitHub cron is UTC and ignores daylight saving, so each local slot is listed at
+    # both possible UTC hours. The script only sends at 9 AM, 2 PM and 8 PM Central
+    # (config.yaml digest_hours) and never sends the same slot twice.
+    #   9 AM CT  = 14 UTC (CDT) / 15 UTC (CST)
+    #   2 PM CT  = 19 UTC (CDT) / 20 UTC (CST)
+    #   8 PM CT  = 01 UTC (CDT) / 02 UTC (CST)
+    - cron: "7 1,2,14,15,19,20 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Send a digest right now"
+        type: boolean
+        default: true
+
+concurrency:
+  group: email-scanner
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run digest
+        run: python -m emailscanner digest ${{ inputs.force && '--force' || '' }}
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SHEET_ID: ${{ secrets.SHEET_ID }}

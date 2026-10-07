@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+client_secret*.json
+token.json
+digest_preview.html
+.pytest_cache/
+email-scanner/
